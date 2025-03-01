@@ -1,3 +1,6 @@
 spring:
   application:
     name: URLShortener
+  datasource:
+    username: momen
+    password: Iloveprogramming20@
