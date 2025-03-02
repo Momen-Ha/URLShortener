@@ -34,7 +34,6 @@ public class UrlService implements UrlServiceInterface {
 
     @Override
     @Transactional
-//    @Cache(value = "urls", key = )
     public LinkResponse createShortUrl(LinkRequest urlRequest) {
 
         UUID uuid;
@@ -56,16 +55,13 @@ public class UrlService implements UrlServiceInterface {
     }
 
     @Override
-//    @Cacheable(value = "urls", key = "#shortUrl")
     public LinkResponse getFullUrl(String shortUrl) {
         return urlMapper.toLinkResponse(getUrl(shortUrl));
     }
 
     @Override
     @Transactional
-//    @CachePut(value = "urls", key = "#shortUrl")
     public LinkResponse updateUrl(String shortUrl) {
-        // update the original url.
         UUID uuid;
         String shortCode = "";
         do {
@@ -82,7 +78,6 @@ public class UrlService implements UrlServiceInterface {
 
     @Override
     @Transactional
-//    @CacheEvict(value = "urls", key = "#shortUrl")
     public void deleteUrl(String shortUrl) {
         Url url = getUrl(shortUrl);
         urlRepository.delete(url);

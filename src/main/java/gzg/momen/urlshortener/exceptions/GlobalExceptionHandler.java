@@ -13,7 +13,7 @@ import java.util.Date;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler
-    public ResponseEntity<ErrorObject> handleUrlNotFoundException(shortCodeNotFoundException e
+    public ResponseEntity<ErrorObject> handleShortCodeNotFoundException(shortCodeNotFoundException e
             , WebRequest request) {
         ErrorObject errorObject = new ErrorObject();
         errorObject.setStatusCode(HttpStatus.BAD_REQUEST.value());
