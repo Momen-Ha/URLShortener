@@ -11,7 +11,7 @@ spring:
     type: redis
 
 server:
-  port: 8081
+  port: 8080
 
 zookeeper:
   host: 127.0.0.1:2181
