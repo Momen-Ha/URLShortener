@@ -1,0 +1,29 @@
+# Ignore target directory where Maven output files are stored
+target/
+
+# Ignore IntelliJ IDEA project files
+*.iml
+.idea/
+
+# Ignore Linux trash files
+.Trash-*
+
+
+# Ignore log files
+*.log
+
+# Ignore temporary files
+*.tmp
+*.swp
+*.swo
+
+# Ignore build output
+build/
+
+# Ignore other files that are not needed in the image
+*.bak
+*.old
+
+
+.env
+.env.local

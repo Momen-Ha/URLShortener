@@ -1,9 +1,9 @@
 package gzg.momen.urlshortener.exceptions;
 
-public class shortCodeNotFoundException extends RuntimeException {
+public class ShortCodeNotFoundException extends RuntimeException {
     private static final long serialVersionUID = 1L;
 
-    public shortCodeNotFoundException(String message) {
+    public ShortCodeNotFoundException(String message) {
         super(message);
     }
 }

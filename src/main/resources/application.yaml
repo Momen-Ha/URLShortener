@@ -1,17 +1,22 @@
 spring:
   application:
     name: URLShortener
-  datasource:
-    username: momen
-    password: Iloveprogramming20@
-    driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/urls
-  jpa:
-    hibernate:
-      ddl-auto: update
   data:
+    mongodb:
+      uri: mongodb://localhost:27017/urls
     redis:
       host: localhost
       port: 6379
   cache:
     type: redis
+
+server:
+  port: 8081
+
+zookeeper:
+  host: 127.0.0.1:2181
+  timeout: 4000
+  node-path: "/counter"
+  range-length: 100000
+  max-retry: 3
+  session-timeout: 12000
