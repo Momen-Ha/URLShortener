@@ -4,6 +4,7 @@ import gzg.momen.urlshortener.constants.ZkConstants;
 import gzg.momen.urlshortener.service.ZookeeperService;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.zookeeper.KeeperException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -30,14 +31,9 @@ public class ZookeeperUtility {
     }
 
     @PostConstruct
-    public void initializeNode() {
+    public void initializeNode() throws KeeperException.NoNodeException {
         log.info("Initializing new Zookeeper node..");
-        // implement restart strategy
-//        if(!zookeeperService.getChildrenNodes().isEmpty() && currentCounter < end){
-//
-//            log.info("Range not exhausted.");
-//            return;
-//        }
+       
         zookeeperService.createNodeInCounter();
 
         List<String> childNodes = zookeeperService.getChildrenNodes().stream()
@@ -45,9 +41,12 @@ public class ZookeeperUtility {
                 .sorted((s1, s2) -> s2.compareTo(s1))
                 .collect(Collectors.toList());
 
+        if(childNodes.isEmpty()) {
+            throw new KeeperException.NoNodeException("Empty Zookeeper node.");
+        }
+
         String latestValue = childNodes.get(0);
         long sequenceNumber = Long.parseLong(latestValue.replaceAll("[^\\d]", ""));
-
         start = sequenceNumber * zkConstants.getRangeLength();
         end = start + zkConstants.getRangeLength();
         currentCounter = start;
@@ -55,7 +54,7 @@ public class ZookeeperUtility {
         log.info("Start: {} | Current: {} | End: {}", start, currentCounter, end);
     }
 
-    public synchronized Long getNextCount() {
+    public synchronized Long getNextCount() throws KeeperException.NoNodeException {
         if (currentCounter > end) {
             initializeNode();
         }

@@ -8,9 +8,10 @@ import gzg.momen.urlshortener.DTO.UrlStats;
 import gzg.momen.urlshortener.exceptions.ShortCodeNotFoundException;
 import gzg.momen.urlshortener.model.Url;
 import gzg.momen.urlshortener.repository.UrlRepository;
-import gzg.momen.urlshortener.utils.URLEncoder;
+import gzg.momen.urlshortener.utils.Base62Encoder;
 import gzg.momen.urlshortener.utils.ZookeeperUtility;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.zookeeper.KeeperException;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -19,7 +20,7 @@ import java.util.Objects;
 
 @Slf4j
 @Service
-public class UrlService implements iUrlService {
+public class UrlService implements IUrlService {
 
     private final UrlRepository urlRepository;
     private final UrlMapper urlMapper;
@@ -49,7 +50,7 @@ public class UrlService implements iUrlService {
     }
 
     @Override
-    public LinkResponse updateUrl(String shortUrl) {
+    public LinkResponse updateUrl(String shortUrl) throws KeeperException.NoNodeException {
         String shortCode = generateShortCode();
         Url url = getUrl(shortUrl);
         url.setShortCode(shortCode);
@@ -73,9 +74,9 @@ public class UrlService implements iUrlService {
         return url;
     }
 
-    private String generateShortCode() {
+    private String generateShortCode() throws KeeperException.NoNodeException {
             Long nextCounter = zookeeper.getNextCount();
-            return URLEncoder.encode(nextCounter);
+            return Base62Encoder.encode(nextCounter);
     }
 
     public UrlStats getUrlStatistics(String url) {

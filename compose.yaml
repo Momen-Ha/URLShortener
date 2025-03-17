@@ -32,8 +32,9 @@ services:
       - "8081:8080"
     environment:
       - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/urls
-      - SPRING_ZOOKEEPER_SERVERS=zookeeper:2181
-      - SPRING_REDIS
+      - ZOOKEEPER_HOST=zookeeper:2181
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
     depends_on:
       - mongodb
       - zookeeper
@@ -65,7 +66,7 @@ services:
       - "2182:2181"
     environment:
       ZOO_MY_ID: 1
-      ZOO_SERVERS: server.1=zookeeper:2888:3888
+      ZOO_SERVERS: server.1=zookeeper1:2888:3888;2181
     volumes:
       - zookeeper_data:/data
       - zookeeper_datalog:/datalog

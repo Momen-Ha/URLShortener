@@ -5,6 +5,8 @@ import gzg.momen.urlshortener.DTO.LinkRequest;
 import gzg.momen.urlshortener.DTO.LinkResponse;
 import gzg.momen.urlshortener.DTO.UrlStats;
 import gzg.momen.urlshortener.service.UrlService;
+import jakarta.validation.Valid;
+import org.apache.zookeeper.KeeperException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,8 +23,8 @@ public class UrlController {
 
 
     @PostMapping("/shorten")
-    public ResponseEntity<LinkResponse> shorten(@RequestBody LinkRequest url) {
-        LinkResponse createdUrl = urlService.createShortUrl(url);
+    public ResponseEntity<LinkResponse> shorten(@RequestBody @Valid LinkRequest linkRequest) {
+        LinkResponse createdUrl = urlService.createShortUrl(linkRequest);
         return new ResponseEntity<>(createdUrl, HttpStatus.CREATED);
     }
 
@@ -34,7 +36,7 @@ public class UrlController {
     }
 
     @PutMapping("/shorten/{url}")
-    public ResponseEntity<LinkResponse> updateLink(@PathVariable String url) {
+    public ResponseEntity<LinkResponse> updateLink(@PathVariable String url) throws KeeperException.NoNodeException {
         LinkResponse updatedUrl = urlService.updateUrl(url);
         return new ResponseEntity<>(updatedUrl, HttpStatus.OK);
     }

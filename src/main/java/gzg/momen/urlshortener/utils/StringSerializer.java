@@ -7,7 +7,7 @@ import java.nio.charset.StandardCharsets;
 public class StringSerializer implements ZkSerializer {
     @Override
     public byte[] serialize(Object data) {
-        return ((String) data).getBytes();
+        return ((String) data).getBytes(StandardCharsets.UTF_8);
     }
 
     @Override
