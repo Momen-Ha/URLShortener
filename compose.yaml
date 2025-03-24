@@ -42,19 +42,36 @@ services:
     networks:
       - spring-boot-app
 
-
+  url-shortener2:
+    container_name: url-shortener2-app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8080"
+    environment:
+      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/urls
+      - ZOOKEEPER_HOST=zookeeper:2181
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+    depends_on:
+      - mongodb
+      - zookeeper
+      - redis
+    networks:
+      - spring-boot-app
 
   nginx:
     image: nginx:latest
+    restart: unless-stopped
     container_name: nginx
     ports:
       - "81:80"
     volumes:
-      - ./nginx/conf.d:/etc/nginx/conf.d
-      - ./nginx/html:/usr/share/nginx/html
-
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
     depends_on:
       - url-shortener
+      - url-shortener2
     networks:
       - spring-boot-app
 

@@ -33,7 +33,7 @@ public class UrlService implements IUrlService {
     }
 
     @Override
-    public LinkResponse createShortUrl(LinkRequest urlRequest) {
+    public LinkResponse createShortUrl(LinkRequest urlRequest) throws KeeperException.NoNodeException {
         Url url = new Url();
         String shortCode = generateShortCode();
         url.setShortCode(shortCode);

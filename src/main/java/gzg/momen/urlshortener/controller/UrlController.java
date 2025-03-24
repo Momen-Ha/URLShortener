@@ -23,7 +23,7 @@ public class UrlController {
 
 
     @PostMapping("/shorten")
-    public ResponseEntity<LinkResponse> shorten(@RequestBody @Valid LinkRequest linkRequest) {
+    public ResponseEntity<LinkResponse> shorten(@RequestBody @Valid LinkRequest linkRequest) throws KeeperException.NoNodeException {
         LinkResponse createdUrl = urlService.createShortUrl(linkRequest);
         return new ResponseEntity<>(createdUrl, HttpStatus.CREATED);
     }

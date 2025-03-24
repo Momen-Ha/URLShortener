@@ -31,13 +31,13 @@ public class ZookeeperService implements IZookeeperService {
     @Override
     public void createNodeInCounter() {
         if (!zkClient.exists(zkConstants.getNodePath())) {
-            zkClient.create(zkConstants.getNodePath(), "parent node", CreateMode.PERSISTENT);
+            zkClient.create(zkConstants.getNodePath(), "", CreateMode.PERSISTENT);
         }
 
 
         String createdNode = zkClient.create(zkConstants.getNodePath().concat("/")
                         .concat(applicationName),
-                "child data", CreateMode.PERSISTENT_SEQUENTIAL);
+                "", CreateMode.PERSISTENT_SEQUENTIAL);
 
 
     }
