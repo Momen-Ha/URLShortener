@@ -7,6 +7,6 @@ import org.apache.zookeeper.KeeperException;
 public interface IUrlService {
     LinkResponse createShortUrl(LinkRequest urlRequest) throws KeeperException.NoNodeException;
     LinkResponse getFullUrl(String shortUrl);
-    LinkResponse updateUrl(String shortUrl) throws KeeperException.NoNodeException;
+    LinkResponse updateUrl(LinkRequest urlRequest) throws KeeperException.NoNodeException;
     void deleteUrl(String shortUrl);
 }

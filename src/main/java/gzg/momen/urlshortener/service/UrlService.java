@@ -12,6 +12,9 @@ import gzg.momen.urlshortener.utils.Base62Encoder;
 import gzg.momen.urlshortener.utils.ZookeeperUtility;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.zookeeper.KeeperException;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -33,6 +36,7 @@ public class UrlService implements IUrlService {
     }
 
     @Override
+    @Cacheable(value = "urls", key = "#urlRequest.url")
     public LinkResponse createShortUrl(LinkRequest urlRequest) throws KeeperException.NoNodeException {
         Url url = new Url();
         String shortCode = generateShortCode();
@@ -45,14 +49,16 @@ public class UrlService implements IUrlService {
     }
 
     @Override
+    @Cacheable(value = "urls", key = "#shortUrl")
     public LinkResponse getFullUrl(String shortUrl) {
         return urlMapper.toLinkResponse(getUrl(shortUrl));
     }
 
     @Override
-    public LinkResponse updateUrl(String shortUrl) throws KeeperException.NoNodeException {
+    @CachePut(value = "urls", key = "#urlRequest.url")
+    public LinkResponse updateUrl(LinkRequest urlRequest) throws KeeperException.NoNodeException {
         String shortCode = generateShortCode();
-        Url url = getUrl(shortUrl);
+        Url url = getUrl(urlRequest.getUrl());
         url.setShortCode(shortCode);
         url.setUpdatedAt(Instant.now());
 
@@ -61,12 +67,13 @@ public class UrlService implements IUrlService {
     }
 
     @Override
+    @CacheEvict(value = "urls", key = "#shortUrl")
     public void deleteUrl(String shortUrl) {
         Url url = getUrl(shortUrl);
         urlRepository.delete(url);
     }
 
-    public Url getUrl(String shortUrl) {
+    private Url getUrl(String shortUrl) {
         Url url = urlRepository.findByShortCode(shortUrl);
         if (Objects.isNull(url)) {
             throw new ShortCodeNotFoundException("Url with code " + shortUrl + " not found");

@@ -25,7 +25,7 @@ public class UrlController {
     @PostMapping("/shorten")
     public ResponseEntity<LinkResponse> shorten(@RequestBody @Valid LinkRequest linkRequest) throws KeeperException.NoNodeException {
         LinkResponse createdUrl = urlService.createShortUrl(linkRequest);
-        return new ResponseEntity<>(createdUrl, HttpStatus.CREATED);
+        return new ResponseEntity<>(createdUrl, HttpStatus.CREATED); 
     }
 
 
@@ -35,9 +35,9 @@ public class UrlController {
         return new ResponseEntity<>(fullUrl, HttpStatus.TEMPORARY_REDIRECT);
     }
 
-    @PutMapping("/shorten/{url}")
-    public ResponseEntity<LinkResponse> updateLink(@PathVariable String url) throws KeeperException.NoNodeException {
-        LinkResponse updatedUrl = urlService.updateUrl(url);
+    @PutMapping("/shorten")
+    public ResponseEntity<LinkResponse> updateLink(@RequestBody @Valid LinkRequest linkRequest) throws KeeperException.NoNodeException {
+        LinkResponse updatedUrl = urlService.updateUrl(linkRequest);
         return new ResponseEntity<>(updatedUrl, HttpStatus.OK);
     }
 
