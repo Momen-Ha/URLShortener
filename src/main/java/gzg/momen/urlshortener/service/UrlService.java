@@ -10,7 +10,6 @@ import gzg.momen.urlshortener.model.Url;
 import gzg.momen.urlshortener.repository.UrlRepository;
 import gzg.momen.urlshortener.utils.Base62Encoder;
 import gzg.momen.urlshortener.utils.ZookeeperUtility;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.zookeeper.KeeperException;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
@@ -21,7 +20,6 @@ import java.time.Instant;
 import java.util.Objects;
 
 
-@Slf4j
 @Service
 public class UrlService implements IUrlService {
 
@@ -55,10 +53,10 @@ public class UrlService implements IUrlService {
     }
 
     @Override
-    @CachePut(value = "urls", key = "#urlRequest.url")
-    public LinkResponse updateUrl(LinkRequest urlRequest) throws KeeperException.NoNodeException {
+    @CachePut(value = "urls", key = "#shortUrl")
+    public LinkResponse updateUrl(String shortUrl) throws KeeperException.NoNodeException {
         String shortCode = generateShortCode();
-        Url url = getUrl(urlRequest.getUrl());
+        Url url = getUrl(shortUrl);
         url.setShortCode(shortCode);
         url.setUpdatedAt(Instant.now());
 

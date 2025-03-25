@@ -35,21 +35,21 @@ public class UrlController {
         return new ResponseEntity<>(fullUrl, HttpStatus.TEMPORARY_REDIRECT);
     }
 
-    @PutMapping("/shorten")
-    public ResponseEntity<LinkResponse> updateLink(@RequestBody @Valid LinkRequest linkRequest) throws KeeperException.NoNodeException {
-        LinkResponse updatedUrl = urlService.updateUrl(linkRequest);
+    @PutMapping("/shorten/{shortUrl}")
+    public ResponseEntity<LinkResponse> updateLink(@PathVariable String shortUrl) throws KeeperException.NoNodeException {
+        LinkResponse updatedUrl = urlService.updateUrl(shortUrl);
         return new ResponseEntity<>(updatedUrl, HttpStatus.OK);
     }
 
-    @DeleteMapping("/shorten/{url}")
-    public ResponseEntity<?> deleteLink(@PathVariable String url) {
-        urlService.deleteUrl(url);
+    @DeleteMapping("/shorten/{shortUrl}")
+    public ResponseEntity<?> deleteLink(@PathVariable String shortUrl) {
+        urlService.deleteUrl(shortUrl);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
-    @GetMapping("/shorten/{url}/stats")
-    public ResponseEntity<UrlStats> getStats(@PathVariable String url) {
-        UrlStats stats = urlService.getUrlStatistics(url);
+    @GetMapping("/shorten/{shortUrl}/stats")
+    public ResponseEntity<UrlStats> getStats(@PathVariable String shortUrl) {
+        UrlStats stats = urlService.getUrlStatistics(shortUrl);
         return new ResponseEntity<>(stats, HttpStatus.OK);
     }
 
