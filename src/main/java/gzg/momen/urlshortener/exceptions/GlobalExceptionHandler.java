@@ -7,11 +7,14 @@ import org.I0Itec.zkclient.exception.ZkNodeExistsException;
 import org.apache.zookeeper.KeeperException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
@@ -69,6 +72,27 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorObject, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, Object>> handleValidationException(MethodArgumentNotValidException ex) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("statusCode", HttpStatus.BAD_REQUEST.value());
+        response.put("timestamp", new Date());
+
+        String errorMessage = ex.getBindingResult().getFieldErrors().get(0).getDefaultMessage();
+
+        String field = ex.getBindingResult().getFieldErrors().get(0).getField();
+
+        Object rejectedValue = ex.getBindingResult().getFieldErrors().get(0).getRejectedValue();
+
+        Map<String, Object> errorDetails = new HashMap<>();
+        errorDetails.put("field", field);
+        errorDetails.put("rejectedValue", rejectedValue);
+        errorDetails.put("message", errorMessage);
+
+        response.put("error", errorDetails);
+
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
 
 
 }
