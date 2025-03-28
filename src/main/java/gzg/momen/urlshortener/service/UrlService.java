@@ -36,7 +36,6 @@ public class UrlService implements IUrlService {
     }
 
     @Override
-    @Cacheable(value = "urls", key = "#urlRequest.url")
     public LinkResponse createShortUrl(LinkRequest urlRequest) throws KeeperException.NoNodeException {
         Url url = new Url();
         String shortCode = generateShortCode();
@@ -44,6 +43,7 @@ public class UrlService implements IUrlService {
         url.setUrl(urlRequest.getUrl());
         url.setCreatedAt(Instant.now());
 
+        redisService.addUrlToCache(shortCode, urlRequest.getUrl());
         urlRepository.save(url);
         return urlMapper.toLinkResponse(url);
     }
@@ -93,8 +93,8 @@ public class UrlService implements IUrlService {
         UrlStats urlStats = new UrlStats();
         urlStats.setUrl(url.getUrl());
         urlStats.setShortCode(url.getShortCode());
-        urlStats.setCreatedAt(Instant.now());
-        urlStats.setUpdatedAt(Instant.now());
+        urlStats.setCreatedAt(url.getCreatedAt());
+        urlStats.setUpdatedAt(url.getUpdatedAt());
         long clicks = redisService.getUniqueCountForShortCode(shortUrl);
         urlStats.setDistinctClicks(clicks);
         return urlStats;
