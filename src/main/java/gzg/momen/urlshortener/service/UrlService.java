@@ -42,9 +42,11 @@ public class UrlService implements IUrlService {
         url.setShortCode(shortCode);
         url.setUrl(urlRequest.getUrl());
         url.setCreatedAt(Instant.now());
-
-        redisService.addUrlToCache(shortCode, urlRequest.getUrl());
         urlRepository.save(url);
+
+        redisService.addUrlToCache(shortCode, urlMapper.toLinkResponse(url));
+        redisService.addShortCodeToBloomFilter(shortCode);
+
         return urlMapper.toLinkResponse(url);
     }
 
@@ -76,6 +78,10 @@ public class UrlService implements IUrlService {
     }
 
     private Url getUrl(String shortUrl) {
+        if(!redisService.checkIfShortCodeExistsInBloomFilter(shortUrl)) {
+            throw new ShortCodeNotFoundException("Url with code " + shortUrl + " not found");
+        }
+
         Url url = urlRepository.findByShortCode(shortUrl);
         if (Objects.isNull(url)) {
             throw new ShortCodeNotFoundException("Url with code " + shortUrl + " not found");
@@ -95,7 +101,7 @@ public class UrlService implements IUrlService {
         urlStats.setShortCode(url.getShortCode());
         urlStats.setCreatedAt(url.getCreatedAt());
         urlStats.setUpdatedAt(url.getUpdatedAt());
-        long clicks = redisService.getUniqueCountForShortCode(shortUrl);
+        long clicks = redisService.getUniqueCountForUrl(shortUrl);
         urlStats.setDistinctClicks(clicks);
         return urlStats;
     }
