@@ -26,30 +26,36 @@ public class UrlService implements IUrlService {
     private final UrlRepository urlRepository;
     private final UrlMapper urlMapper;
     private final ZookeeperUtility zookeeper;
+    private final RedisService redisService;
 
-    public UrlService(UrlRepository urlRepository, UrlMapper urlMapper, ZookeeperUtility zookeeper) {
+    public UrlService(UrlRepository urlRepository, UrlMapper urlMapper, ZookeeperUtility zookeeper, RedisService redisService) {
         this.urlRepository = urlRepository;
         this.urlMapper = urlMapper;
         this.zookeeper = zookeeper;
+        this.redisService = redisService;
     }
 
     @Override
-    @Cacheable(value = "urls", key = "#urlRequest.url")
     public LinkResponse createShortUrl(LinkRequest urlRequest) throws KeeperException.NoNodeException {
         Url url = new Url();
         String shortCode = generateShortCode();
         url.setShortCode(shortCode);
         url.setUrl(urlRequest.getUrl());
         url.setCreatedAt(Instant.now());
-
         urlRepository.save(url);
+
+        redisService.addUrlToCache(shortCode, urlMapper.toLinkResponse(url));
+        redisService.addShortCodeToBloomFilter(shortCode);
+
         return urlMapper.toLinkResponse(url);
     }
 
     @Override
     @Cacheable(value = "urls", key = "#shortUrl")
-    public LinkResponse getFullUrl(String shortUrl) {
-        return urlMapper.toLinkResponse(getUrl(shortUrl));
+    public LinkResponse getFullUrl(String shortUrl, String ip) {
+        Url url = getUrl(shortUrl);
+        redisService.addUserIpToHyperLogLog(shortUrl, ip);
+        return urlMapper.toLinkResponse(url);
     }
 
     @Override
@@ -72,6 +78,10 @@ public class UrlService implements IUrlService {
     }
 
     private Url getUrl(String shortUrl) {
+        if(!redisService.checkIfShortCodeExistsInBloomFilter(shortUrl)) {
+            throw new ShortCodeNotFoundException("Url with code " + shortUrl + " not found");
+        }
+
         Url url = urlRepository.findByShortCode(shortUrl);
         if (Objects.isNull(url)) {
             throw new ShortCodeNotFoundException("Url with code " + shortUrl + " not found");
@@ -84,7 +94,15 @@ public class UrlService implements IUrlService {
             return Base62Encoder.encode(nextCounter);
     }
 
-    public UrlStats getUrlStatistics(String url) {
-        return new UrlStats();
+    public UrlStats getUrlStatistics(String shortUrl) {
+        Url url = getUrl(shortUrl);
+        UrlStats urlStats = new UrlStats();
+        urlStats.setUrl(url.getUrl());
+        urlStats.setShortCode(url.getShortCode());
+        urlStats.setCreatedAt(url.getCreatedAt());
+        urlStats.setUpdatedAt(url.getUpdatedAt());
+        long clicks = redisService.getUniqueCountForUrl(shortUrl);
+        urlStats.setDistinctClicks(clicks);
+        return urlStats;
     }
 }

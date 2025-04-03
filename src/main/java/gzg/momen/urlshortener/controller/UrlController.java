@@ -5,6 +5,7 @@ import gzg.momen.urlshortener.DTO.LinkRequest;
 import gzg.momen.urlshortener.DTO.LinkResponse;
 import gzg.momen.urlshortener.DTO.UrlStats;
 import gzg.momen.urlshortener.service.UrlService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.apache.zookeeper.KeeperException;
 import org.springframework.http.HttpStatus;
@@ -30,8 +31,10 @@ public class UrlController {
 
 
     @GetMapping("/{shortUrl}")
-    public ResponseEntity<LinkResponse> getLink(@PathVariable String shortUrl) {
-        LinkResponse fullUrl = urlService.getFullUrl(shortUrl);
+    public ResponseEntity<LinkResponse> getLink(@PathVariable String shortUrl,
+                                                HttpServletRequest httpServletRequest) {
+        String ip = httpServletRequest.getRemoteAddr();
+        LinkResponse fullUrl = urlService.getFullUrl(shortUrl, ip);
         return new ResponseEntity<>(fullUrl, HttpStatus.TEMPORARY_REDIRECT);
     }
 

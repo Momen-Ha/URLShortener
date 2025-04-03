@@ -13,7 +13,7 @@ services:
       - spring-boot-app
 
   redis:
-    image: redis:latest
+    image: redislabs/rebloom:latest
     container_name: redis
     restart: unless-stopped
     ports:
