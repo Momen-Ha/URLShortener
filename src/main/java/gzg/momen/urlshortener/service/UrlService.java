@@ -10,16 +10,17 @@ import gzg.momen.urlshortener.model.Url;
 import gzg.momen.urlshortener.repository.UrlRepository;
 import gzg.momen.urlshortener.utils.Base62Encoder;
 import gzg.momen.urlshortener.utils.ZookeeperUtility;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.zookeeper.KeeperException;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.Objects;
 
 
+@Slf4j
 @Service
 public class UrlService implements IUrlService {
 
@@ -44,17 +45,28 @@ public class UrlService implements IUrlService {
         url.setCreatedAt(Instant.now());
         urlRepository.save(url);
 
-        redisService.addUrlToCache(shortCode, urlMapper.toLinkResponse(url));
+        redisService.addUrlToCache(urlMapper.toLinkResponse(url));
         redisService.addShortCodeToBloomFilter(shortCode);
 
         return urlMapper.toLinkResponse(url);
     }
 
     @Override
-    @Cacheable(value = "urls", key = "#shortUrl")
     public LinkResponse getFullUrl(String shortUrl, String ip) {
-        Url url = getUrl(shortUrl);
+        if(!redisService.checkIfShortCodeDoesNotExistsInBloomFilter(shortUrl)) {
+            throw new ShortCodeNotFoundException("Url with code "
+                    + shortUrl + " not found");
+        }
+
+        LinkResponse cachedResponse = redisService.getUrlFromCache(shortUrl);
+
         redisService.addUserIpToHyperLogLog(shortUrl, ip);
+
+        if(Objects.nonNull(cachedResponse)) {
+            return cachedResponse;
+        }
+
+        Url url = getUrl(shortUrl);
         return urlMapper.toLinkResponse(url);
     }
 
@@ -77,11 +89,8 @@ public class UrlService implements IUrlService {
         urlRepository.delete(url);
     }
 
-    private Url getUrl(String shortUrl) {
-        if(!redisService.checkIfShortCodeExistsInBloomFilter(shortUrl)) {
-            throw new ShortCodeNotFoundException("Url with code " + shortUrl + " not found");
-        }
 
+    private Url getUrl(String shortUrl) {
         Url url = urlRepository.findByShortCode(shortUrl);
         if (Objects.isNull(url)) {
             throw new ShortCodeNotFoundException("Url with code " + shortUrl + " not found");
