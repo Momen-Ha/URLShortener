@@ -10,46 +10,64 @@ import gzg.momen.urlshortener.model.Url;
 import gzg.momen.urlshortener.repository.UrlRepository;
 import gzg.momen.urlshortener.utils.Base62Encoder;
 import gzg.momen.urlshortener.utils.ZookeeperUtility;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.zookeeper.KeeperException;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.Objects;
 
 
+@Slf4j
 @Service
 public class UrlService implements IUrlService {
 
     private final UrlRepository urlRepository;
     private final UrlMapper urlMapper;
     private final ZookeeperUtility zookeeper;
+    private final RedisService redisService;
 
-    public UrlService(UrlRepository urlRepository, UrlMapper urlMapper, ZookeeperUtility zookeeper) {
+    public UrlService(UrlRepository urlRepository, UrlMapper urlMapper, ZookeeperUtility zookeeper, RedisService redisService) {
         this.urlRepository = urlRepository;
         this.urlMapper = urlMapper;
         this.zookeeper = zookeeper;
+        this.redisService = redisService;
     }
 
     @Override
-    @Cacheable(value = "urls", key = "#urlRequest.url")
     public LinkResponse createShortUrl(LinkRequest urlRequest) throws KeeperException.NoNodeException {
         Url url = new Url();
         String shortCode = generateShortCode();
         url.setShortCode(shortCode);
         url.setUrl(urlRequest.getUrl());
         url.setCreatedAt(Instant.now());
-
         urlRepository.save(url);
+
+        redisService.addUrlToCache(urlMapper.toLinkResponse(url));
+        redisService.addShortCodeToBloomFilter(shortCode);
+
         return urlMapper.toLinkResponse(url);
     }
 
     @Override
-    @Cacheable(value = "urls", key = "#shortUrl")
-    public LinkResponse getFullUrl(String shortUrl) {
-        return urlMapper.toLinkResponse(getUrl(shortUrl));
+    public LinkResponse getFullUrl(String shortUrl, String ip) {
+        if(!redisService.checkIfShortCodeDoesNotExistsInBloomFilter(shortUrl)) {
+            throw new ShortCodeNotFoundException("Url with code "
+                    + shortUrl + " not found");
+        }
+
+        LinkResponse cachedResponse = redisService.getUrlFromCache(shortUrl);
+
+        redisService.addUserIpToHyperLogLog(shortUrl, ip);
+
+        if(Objects.nonNull(cachedResponse)) {
+            return cachedResponse;
+        }
+
+        Url url = getUrl(shortUrl);
+        return urlMapper.toLinkResponse(url);
     }
 
     @Override
@@ -71,6 +89,7 @@ public class UrlService implements IUrlService {
         urlRepository.delete(url);
     }
 
+
     private Url getUrl(String shortUrl) {
         Url url = urlRepository.findByShortCode(shortUrl);
         if (Objects.isNull(url)) {
@@ -84,7 +103,15 @@ public class UrlService implements IUrlService {
             return Base62Encoder.encode(nextCounter);
     }
 
-    public UrlStats getUrlStatistics(String url) {
-        return new UrlStats();
+    public UrlStats getUrlStatistics(String shortUrl) {
+        Url url = getUrl(shortUrl);
+        UrlStats urlStats = new UrlStats();
+        urlStats.setUrl(url.getUrl());
+        urlStats.setShortCode(url.getShortCode());
+        urlStats.setCreatedAt(url.getCreatedAt());
+        urlStats.setUpdatedAt(url.getUpdatedAt());
+        long clicks = redisService.getUniqueCountForUrl(shortUrl);
+        urlStats.setDistinctClicks(clicks);
+        return urlStats;
     }
 }
